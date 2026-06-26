@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SS 프라이어 청소 현황</title>
+  <style>
+    body { font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 16px; color: #222; background: #f5f5f5; }
+    h2 { margin-bottom: 4px; }
+    label { display:block; margin-top: 16px; font-weight: bold; }
+    select, textarea { width:100%; padding:8px; margin-top:4px; box-sizing:border-box; font-size:15px; border: 1px solid #ccc; border-radius: 4px; }
+    .photo-item { margin-top:10px; border:1px solid #ddd; border-radius:8px; padding:10px; background: #fff; }
+    .photo-item input[type=file] { width:100%; margin-top:6px; }
+    .checklist label { font-weight:normal; display:flex; align-items:center; gap:8px; margin-top:8px; }
+    .checklist input { width:auto; }
+    button { margin-top:22px; width:100%; padding:13px; font-size:16px; background:#1a73e8; color:#fff; border:none; border-radius:6px; font-weight: bold; cursor: pointer; }
+    button:disabled { background:#9bbdf0; }
+    .preview { max-width:100%; margin-top:8px; border-radius:6px; display:none; aspect-ratio: 4/3; object-fit: cover; }
+    #status { margin-top:14px; font-weight:bold; text-align:center; }
+    .warning-box { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 10px; border-radius: 6px; font-size: 13px; margin-top: 8px; line-height: 1.4; }
+    .error-text { color: #d93025; }
+    .success-text { color: #1e7e34; }
+    .file-error-alert { color: #d93025; font-weight: bold; font-size: 14px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+  <h2>SS 프라이어 청소 현황</h2>
+  
+  <div style="background: #fff; border-left: 4px solid #1a73e8; padding: 12px; margin-top: 10px; margin-bottom: 14px; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1a73e8; line-height: 1.5;">
+      💡 매주 프라이어 1대씩 청소 시에 사진 촬영하여 제출해 주세요!
+    </p>
+    <p style="margin: 6px 0 0 0; font-size: 13px; color: #5f6368; line-height: 1.4;">
+      (해당 주차에 진행 못 했어도 한 달 안에 3구 혹은 4구 프라이어 청소를 모두 완료하여야 합니다.)
+    </p>
+  </div>
+
+  <div class="warning-box">
+    <strong>⚠️ 실시간 촬영 필수</strong><br>
+    카메라를 선택해 현장에서 즉석 촬영한 사진만 제출 가능합니다.<br>
+    (과거 저장된 앨범 이미지 선택 시 제출이 차단됩니다.)
+  </div>
+
+  <label>매장 선택</label>
+  <select id="store">
+    <option value="">매장을 선택하세요</option>
+  </select>
+
+  <label>프라이어 선택</label>
+  <select id="fryerType">
+    <option value="프라이 1">프라이 1</option>
+    <option value="프라이 2">프라이 2</option>
+    <option value="치킨">치킨</option>
+    <option value="슈룸">슈룸</option>
+  </select>
+
+  <div class="photo-item">
+    <label>프라이어 POT 사진 (촬영)</label>
+    <input type="file" accept="image/*" capture="environment" data-label="프라이어 POT" class="photo-input">
+    <img class="preview">
+  </div>
+  <div class="photo-item">
+    <label>프라이어 상단 사진 (촬영)</label>
+    <input type="file" accept="image/*" capture="environment" data-label="프라이어 상단" class="photo-input">
+    <img class="preview">
+  </div>
+  <div class="photo-item">
+    <label>프라이어 하단 사진 (촬영)</label>
+    <input type="file" accept="image/*" capture="environment" data-label="프라이어 하단" class="photo-input">
+    <img class="preview">
+  </div>
+
+  <label>체크리스트</label>
+  <div class="checklist" class="photo-item">
+    <label><input type="checkbox" id="halfDiscard"> 반 폐기</label>
+    <label><input type="checkbox" id="fullDiscard"> 전체 폐기</label>
+    <label><input type="checkbox" id="filtering"> 필터링</label>
+  </div>
+
+  <label>그 외 조치사항</label>
+  <textarea id="note" rows="3"></textarea>
+
+  <button id="submitBtn">제출하기</button>
+  <div id="status"></div>
+
+  <script>
+    // 💡 [중요] 1단계에서 복사해둔 구글 웹 앱 주소를 여기에 정확히 붙여넣으세요!
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxhocaWwdZ1BVhvP6inBY3HESAOeinjBCZOyJSGCfNJm3GLXH9dLLXrkejo36sUsATV/exec";
+
+    // 하드코딩된 매장 리스트 (GitHub 독립 구동을 위해 프론트에 배치)
+    const STORES = [
+      '강남대로', '청담', '두타', '분당', '고양', '센트럴', '송도', '서면', '종각', '타임',
+      '용산', '동성로', '대전', '노원', '코엑스', '동탄', '홍대', '신림', '천안', '강남스퀘어',
+      '잠실', '부천', '부산센텀', 'T1', '목동', '여의도', '도곡', '김포', '대구신세계', '부산기장',
+      '성수', 'T2', '시흥', '파주', '수지', '의왕'
+    ];
+
+    // 매장 드롭다운 채우기
+    const sel = document.getElementById('store');
+    STORES.forEach(function (s) {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s;
+      sel.appendChild(opt);
+    });
+
+    // 과거 사진 차단 및 검증 로직
+    document.querySelectorAll('.photo-input').forEach(function (input) {
+      input.addEventListener('change', function () {
+        const img = input.nextElementSibling;
+        const statusEl = document.getElementById('status');
+        
+        const existingAlert = input.parentNode.querySelector('.file-error-alert');
+        if (existingAlert) existingAlert.remove();
+        statusEl.innerHTML = ''; 
+
+        if (input.files[0]) {
+          const file = input.files[0];
+          const timeDiff = Math.abs(Date.now() - file.lastModified);
+          const minutesDiff = timeDiff / (1000 * 60);
+
+          if (minutesDiff > 5) {
+            input.value = ""; 
+            img.style.display = 'none'; 
+
+            const alertBox = document.createElement('div');
+            alertBox.className = 'file-error-alert';
+            alertBox.innerHTML = '⚠️ 과거 사진은 등록이 취소됩니다! [다시 촬영]해 주세요.';
+            input.parentNode.appendChild(alertBox);
+            
+            statusEl.innerHTML = "<span class='error-text'>❌ 과거 사진이 감지되어 업로드가 차단되었습니다.</span>";
+            return;
+          }
+
+          img.src = URL.createObjectURL(file);
+          img.style.display = 'block';
+        }
+      });
+    });
+
+    function compressImageToBase64(file) {
+      return new Promise(function (resolve, reject) {
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = function () {
+          img.onload = function () {
+            const maxSize = 1280;
+            let w = img.width, h = img.height;
+            if (w > h && w > maxSize) { h = Math.round(h * (maxSize / w)); w = maxSize; }
+            else if (h > maxSize) { w = Math.round(w * (maxSize / h)); h = maxSize; }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
+          };
+          img.onerror = reject;
+          img.src = reader.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 제출 프로세스 (GitHub -> 구글 전송)
+    document.getElementById('submitBtn').addEventListener('click', async function () {
+      const btn = this;
+      const statusEl = document.getElementById('status');
+      const inputs = document.querySelectorAll('.photo-input');
+
+      if (!document.getElementById('store').value) {
+        statusEl.innerHTML = "<span class='error-text'>매장을 선택해 주세요!</span>";
+        return;
+      }
+
+      for (const input of inputs) {
+        if (!input.files[0]) {
+          statusEl.innerHTML = "<span class='error-text'>모든 사진을 촬영해 주세요. (" + input.dataset.label + " 누락)</span>";
+          return;
+        }
+      }
+
+      btn.disabled = true;
+      statusEl.textContent = '사진 압축 및 보안 검증 중...';
+
+      const photos = [];
+      for (const input of inputs) {
+        const base64 = await compressImageToBase64(input.files[0]);
+        photos.push({
+          label: input.dataset.label,
+          name: input.files[0].name,
+          mimeType: 'image/jpeg',
+          base64: base64,
+        });
+      }
+
+      const payload = {
+        store: document.getElementById('store').value,
+        fryerType: document.getElementById('fryerType').value,
+        checklist: {
+          halfDiscard: document.getElementById('halfDiscard').checked,
+          fullDiscard: document.getElementById('fullDiscard').checked,
+          filtering: document.getElementById('filtering').checked,
+        },
+        note: document.getElementById('note').value,
+        photos: photos,
+      };
+
+      statusEl.textContent = '데이터 안전 전송 중...';
+
+      function sendToServer() {
+        // GitHub 환경에서 구글 API 서버로 데이터를 백그라운드 전송하는 핵심 API 로직
+        fetch(GAS_WEB_APP_URL, {
+          method: "POST",
+          mode: "no-cors", // CORS 차단 회피형 전송 모드 활성화
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(payload)
+        })
+        .then(function() {
+          statusEl.innerHTML = "<span class='success-text'>🎉 제출 완료! 데이터가 성공적으로 기록되었습니다.</span>";
+          btn.disabled = false;
+          inputs.forEach(input => { input.value = ""; });
+          document.querySelectorAll('.preview').forEach(img => { img.style.display = 'none'; });
+          document.querySelectorAll('.file-error-alert').forEach(alert => { alert.remove(); });
+          document.getElementById('note').value = "";
+          document.getElementById('store').value = "";
+        })
+        .catch(function(err) {
+          statusEl.innerHTML = "<span class='error-text'>제출 실패: " + err.message + "</span>";
+          btn.disabled = false;
+        });
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            payload.lat = pos.coords.latitude;
+            payload.lng = pos.coords.longitude;
+            sendToServer();
+          },
+          function () { sendToServer(); },
+          { timeout: 3000 }
+        );
+      } else {
+        sendToServer();
+      }
+    });
+  </script>
+</body>
+</html>
