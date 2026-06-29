@@ -70,8 +70,8 @@
   <div id="status"></div>
 
   <script>
-    // 💡 [중요] 사용 중이신 구글 Apps Script 웹앱 URL을 정확히 채워넣으세요!
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynbNdqCNhGPkGYeCY_1QEtpsceUsLw2f9eZpBd1ej43fXIGyXSCjItbJLIteFpdOAA/exec";
+    // 💡 [중요] 새로 배포한 구글 웹앱 URL 주소를 여기에 정확히 채워넣으세요!
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzGkM5j0JcAjVuMCBFkksj6-dOVk-OzqD3VstjGlji9k5UmrbUQuTW47gm3cPl3GUVV/exec";
 
     const STORES = [
       '강남대로', '청담', '두타', '분당', '고양', '센트럴', '송도', '서면', '종각', '타임',
@@ -164,10 +164,9 @@
       }
 
       btn.disabled = true;
-      statusEl.innerHTML = "⏳ 고속 사진 압축 진행 중...";
+      statusEl.innerHTML = "⏳ 사진 압축 진행 중...";
 
       try {
-        // ⚡ [GPS 전면 제거]: 대기 시간 없이 곧바로 3장 압축 시작
         const photos = await Promise.all(
           Array.from(inputs).map(async function (input) {
             const base64 = await compressImageToBase64(input.files[0]);
@@ -184,11 +183,11 @@
           store: document.getElementById('store').value,
           fryerType: document.getElementById('fryerType').value,
           photos: photos,
-          lat: "", // 공백 처리
-          lng: ""  // 공백 처리
+          lat: "", 
+          lng: ""  
         };
 
-        statusEl.innerHTML = "🚀 데이터 전송 중...";
+        statusEl.innerHTML = "🚀 사진 전송 중..."; // 담백하고 명확하게 수정
         await sendToServer(payload, btn, statusEl, inputs);
 
       } catch (err) {
