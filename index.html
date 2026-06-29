@@ -24,7 +24,7 @@
 <body>
 
   <h2>SS 프라이어 청소 현황</h2>
-  
+
   <div style="background: #fff; border-left: 4px solid #1a73e8; padding: 12px; margin-top: 10px; margin-bottom: 14px; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
     <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1a73e8; line-height: 1.5;">
       💡 매주 프라이어 1대씩 청소 시에 사진 촬영하여 제출해 주세요!
@@ -71,7 +71,7 @@
 
   <script>
     // 💡 [중요] 새로 배포한 구글 Apps Script 웹앱 URL을 여기에 정확히 붙여넣으세요!
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbziul6Qiho2IhbzfPeLcDEUlmkG8runudY0hSfyUaF9qT7PJnmS5OaY5dhS7MLO3LcH/exec";
+    const GAS_WEB_APP_URL = "";
 
     const STORES = [
       '강남대로', '청담', '두타', '분당', '고양', '센트럴', '송도', '서면', '종각', '타임',
@@ -92,10 +92,10 @@
       input.addEventListener('change', function () {
         const img = document.getElementById('p-preview-' + (index + 1));
         const statusEl = document.getElementById('status');
-        
+
         const existingAlert = input.parentNode.querySelector('.file-error-alert');
         if (existingAlert) existingAlert.remove();
-        statusEl.innerHTML = ''; 
+        statusEl.innerHTML = '';
 
         if (input.files[0]) {
           const file = input.files[0];
@@ -103,14 +103,14 @@
           const minutesDiff = timeDiff / (1000 * 60);
 
           if (minutesDiff > 5) {
-            input.value = ""; 
-            if (img) img.style.display = 'none'; 
+            input.value = "";
+            if (img) img.style.display = 'none';
 
             const alertBox = document.createElement('div');
             alertBox.className = 'file-error-alert';
             alertBox.innerHTML = '⚠️ 과거 사진은 등록이 취소됩니다! [다시 촬영]해 주세요.';
             input.parentNode.appendChild(alertBox);
-            
+
             statusEl.innerHTML = "<span class='error-text'>❌ 과거 사진이 감지되어 업로드가 차단되었습니다.</span>";
             return;
           }
@@ -140,11 +140,23 @@
             // 압축 퀄리티를 0.6으로 설정하여 전송 용량 최소화
             resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
           };
-          img.onerror = function() { reject(new Error("이미지 파일 변환 실패")); };
+          img.onerror = function () { reject(new Error("이미지 파일 변환 실패")); };
           img.src = reader.result;
         };
-        reader.onerror = function() { reject(new Error("파일 읽기 실패")); };
+        reader.onerror = function () { reject(new Error("파일 읽기 실패")); };
         reader.readAsDataURL(file);
+      });
+    }
+
+    // ⚡ [속도 추가 최적화]: 위치 정보 요청을 Promise로 감싸서, 사진 압축과 동시에 진행되게 함
+    function getLocationSafe(timeoutMs) {
+      return new Promise(function (resolve) {
+        if (!navigator.geolocation) { resolve({}); return; }
+        navigator.geolocation.getCurrentPosition(
+          function (pos) { resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+          function () { resolve({}); }, // 권한 거부/실패해도 제출은 계속 진행
+          { timeout: timeoutMs }
+        );
       });
     }
 
@@ -166,43 +178,35 @@
       }
 
       btn.disabled = true;
-      statusEl.innerHTML = "⏳ 고속 사진 압축 및 보안 검증 중...";
+      statusEl.innerHTML = "⏳ 고속 사진 압축 및 위치 확인 동시 진행 중...";
 
       try {
-        const photos = [];
-        for (const input of inputs) {
-          const base64 = await compressImageToBase64(input.files[0]);
-          photos.push({
-            label: input.dataset.label,
-            name: input.files[0].name,
-            mimeType: 'image/jpeg',
-            base64: base64,
-          });
-        }
+        // 사진 압축과 위치 정보 요청을 동시에 진행 (순차 처리보다 1~2초 빨라짐)
+        const compressPromise = Promise.all(
+          Array.from(inputs).map(async function (input) {
+            const base64 = await compressImageToBase64(input.files[0]);
+            return {
+              label: input.dataset.label,
+              name: input.files[0].name,
+              mimeType: 'image/jpeg',
+              base64: base64,
+            };
+          })
+        );
+        const locationPromise = getLocationSafe(2000);
+
+        const [photos, loc] = await Promise.all([compressPromise, locationPromise]);
 
         const payload = {
           store: document.getElementById('store').value,
           fryerType: document.getElementById('fryerType').value,
           photos: photos,
+          lat: loc.lat,
+          lng: loc.lng,
         };
 
         statusEl.innerHTML = "🚀 초고속 전송 중...";
-
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            async function (pos) {
-              payload.lat = pos.coords.latitude;
-              payload.lng = pos.coords.longitude;
-              await sendToServer(payload, btn, statusEl, inputs);
-            },
-            async function () { 
-              await sendToServer(payload, btn, statusEl, inputs); 
-            },
-            { timeout: 2500 } // 위치 수집 딜레이도 함께 단축
-          );
-        } else {
-          await sendToServer(payload, btn, statusEl, inputs);
-        }
+        await sendToServer(payload, btn, statusEl, inputs);
 
       } catch (err) {
         statusEl.innerHTML = "<span class='error-text'>❌ 에러 발생: " + err.message + "</span>";
@@ -212,18 +216,18 @@
 
     async function sendToServer(payload, btn, statusEl, inputs) {
       try {
-        const response = await fetch(GAS_WEB_APP_URL, {
+        await fetch(GAS_WEB_APP_URL, {
           method: "POST",
-          mode: "no-cors", 
+          mode: "no-cors",
           headers: { "Content-Type": "text/plain" },
           body: JSON.stringify(payload)
         });
 
         statusEl.innerHTML = "<span class='success-text'>🎉 제출 완료! 데이터가 성공적으로 기록되었습니다.</span>";
         btn.disabled = false;
-        
-        inputs.forEach(input => { input.value = ""; });
-        document.querySelectorAll('.preview').forEach(img => { img.style.display = 'none'; });
+
+        inputs.forEach(function (input) { input.value = ""; });
+        document.querySelectorAll('.preview').forEach(function (img) { img.style.display = 'none'; });
         document.getElementById('store').value = "";
 
       } catch (err) {
