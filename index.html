@@ -8,11 +8,9 @@
     body { font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 16px; color: #222; background: #f5f5f5; }
     h2 { margin-bottom: 4px; }
     label { display:block; margin-top: 16px; font-weight: bold; }
-    select, textarea { width:100%; padding:8px; margin-top:4px; box-sizing:border-box; font-size:15px; border: 1px solid #ccc; border-radius: 4px; }
+    select { width:100%; padding:8px; margin-top:4px; box-sizing:border-box; font-size:15px; border: 1px solid #ccc; border-radius: 4px; }
     .photo-item { margin-top:10px; border:1px solid #ddd; border-radius:8px; padding:10px; background: #fff; }
     .photo-item input[type=file] { width:100%; margin-top:6px; }
-    .checklist label { font-weight:normal; display:flex; align-items:center; gap:8px; margin-top:8px; }
-    .checklist input { width:auto; }
     button { margin-top:22px; width:100%; padding:13px; font-size:16px; background:#1a73e8; color:#fff; border:none; border-radius:6px; font-weight: bold; cursor: pointer; }
     button:disabled { background:#9bbdf0; }
     .preview { max-width:100%; margin-top:8px; border-radius:6px; display:none; aspect-ratio: 4/3; object-fit: cover; }
@@ -31,14 +29,11 @@
     <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1a73e8; line-height: 1.5;">
       💡 매주 프라이어 1대씩 청소 시에 사진 촬영하여 제출해 주세요!
     </p>
-    <p style="margin: 6px 0 0 0; font-size: 13px; color: #5f6368; line-height: 1.4;">
-      해당 주차에 진행 못 했어도 한 달 안에 3구 혹은 4구 프라이어 청소를 모두 완료하여야 합니다
-    </p>
   </div>
 
   <div class="warning-box">
     <strong>⚠️ 실시간 촬영 필수</strong><br>
-    카메라를 선택해 현장에서 즉석 촬영한 사진만 제출 가능합니다.<br>
+    카메라를 선택해 현장에서 즉석 촬영한 사진만 제출 가능합니다<br>
     과거 저장된 앨범 이미지 선택 시 제출이 차단됩니다
   </div>
 
@@ -57,18 +52,18 @@
 
   <div class="photo-item">
     <label>프라이어 POT 사진 (촬영)</label>
-    <input type="file" accept="image/*" capture="environment" data-label="프라이어 POT" class="photo-input">
-    <img class="preview">
+    <input type="file" accept="image/*" capture="environment" data-label="프라이어 POT" class="photo-input" id="p-input-1">
+    <img class="preview" id="p-preview-1">
   </div>
   <div class="photo-item">
     <label>프라이어 상단 사진 (촬영)</label>
-    <input type="file" accept="image/*" capture="environment" data-label="프라이어 상단" class="photo-input">
-    <img class="preview">
+    <input type="file" accept="image/*" capture="environment" data-label="프라이어 상단" class="photo-input" id="p-input-2">
+    <img class="preview" id="p-preview-2">
   </div>
   <div class="photo-item">
     <label>프라이어 하단 사진 (촬영)</label>
-    <input type="file" accept="image/*" capture="environment" data-label="프라이어 하단" class="photo-input">
-    <img class="preview">
+    <input type="file" accept="image/*" capture="environment" data-label="프라이어 하단" class="photo-input" id="p-input-3">
+    <img class="preview" id="p-preview-3">
   </div>
 
   <button id="submitBtn">제출하기</button>
@@ -93,9 +88,9 @@
       sel.appendChild(opt);
     });
 
-    document.querySelectorAll('.photo-input').forEach(function (input) {
+    document.querySelectorAll('.photo-input').forEach(function (input, index) {
       input.addEventListener('change', function () {
-        const img = input.nextElementSibling;
+        const img = document.getElementById('p-preview-' + (index + 1));
         const statusEl = document.getElementById('status');
         
         const existingAlert = input.parentNode.querySelector('.file-error-alert');
@@ -109,7 +104,7 @@
 
           if (minutesDiff > 5) {
             input.value = ""; 
-            img.style.display = 'none'; 
+            if (img) img.style.display = 'none'; 
 
             const alertBox = document.createElement('div');
             alertBox.className = 'file-error-alert';
@@ -120,8 +115,10 @@
             return;
           }
 
-          img.src = URL.createObjectURL(file);
-          img.style.display = 'block';
+          if (img) {
+            img.src = URL.createObjectURL(file);
+            img.style.display = 'block';
+          }
         }
       });
     });
@@ -141,10 +138,10 @@
             canvas.getContext('2d').drawImage(img, 0, 0, w, h);
             resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
           };
-          img.onerror = function(e) { reject(new Error("이미지 로드 실패")); };
+          img.onerror = function() { reject(new Error("이미지 파일 변환 실패")); };
           img.src = reader.result;
         };
-        reader.onerror = function(e) { reject(new Error("파일 읽기 실패")); };
+        reader.onerror = function() { reject(new Error("파일 읽기 실패")); };
         reader.readAsDataURL(file);
       });
     }
@@ -184,16 +181,10 @@
         const payload = {
           store: document.getElementById('store').value,
           fryerType: document.getElementById('fryerType').value,
-          checklist: {
-            halfDiscard: document.getElementById('halfDiscard').checked,
-            fullDiscard: document.getElementById('fullDiscard').checked,
-            filtering: document.getElementById('filtering').checked,
-          },
-          note: document.getElementById('note').value,
           photos: photos,
         };
 
-        statusEl.innerHTML = "🚀 데이터 안전 전송 중...";
+        statusEl.innerHTML = "🚀 데이터 전송 중...";
 
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
@@ -212,15 +203,13 @@
         }
 
       } catch (err) {
-        statusEl.innerHTML = "<span class='error-text'>❌ 압축 중 오류 발생: " + err.message + "</span>";
+        statusEl.innerHTML = "<span class='error-text'>❌ 에러 발생: " + err.message + "</span>";
         btn.disabled = false;
       }
     });
 
-    // 💡 [핵심 수정] 외부 전송 규격을 안전한 폼 데이터 방식으로 최적화
     async function sendToServer(payload, btn, statusEl, inputs) {
       try {
-        // 구글 Apps Script에 요청을 보낼 때 주소창 뒤에 꼼수 파라미터를 안 붙이면 cors 에러로 프로세스가 멈춥니다.
         const response = await fetch(GAS_WEB_APP_URL, {
           method: "POST",
           mode: "no-cors", 
@@ -228,19 +217,15 @@
           body: JSON.stringify(payload)
         });
 
-        // no-cors 모드는 결과 본문을 읽을 수 없으므로 성공 처리로 바로 넘어갑니다.
         statusEl.innerHTML = "<span class='success-text'>🎉 제출 완료! 데이터가 성공적으로 기록되었습니다.</span>";
         btn.disabled = false;
         
-        // 데이터 초기화
         inputs.forEach(input => { input.value = ""; });
         document.querySelectorAll('.preview').forEach(img => { img.style.display = 'none'; });
-        document.querySelectorAll('.file-error-alert').forEach(alert => { alert.remove(); });
-        document.getElementById('note').value = "";
         document.getElementById('store').value = "";
 
       } catch (err) {
-        statusEl.innerHTML = "<span class='error-text'>❌ 전송 중 오류 발생: " + err.message + "<br>인터넷 연결이나 구글 설정을 확인하세요.</span>";
+        statusEl.innerHTML = "<span class='error-text'>❌ 전송 중 오류 발생: " + err.message + "</span>";
         btn.disabled = false;
       }
     }
