@@ -71,27 +71,17 @@
     <img class="preview">
   </div>
 
-  <label>체크리스트</label>
-  <div class="checklist">
-    <label><input type="checkbox" id="halfDiscard"> 반 폐기</label>
-    <label><input type="checkbox" id="fullDiscard"> 전체 폐기</label>
-    <label><input type="checkbox" id="filtering"> 필터링</label>
-  </div>
-
-  <label>그 외 조치사항</label>
-  <textarea id="note" rows="3"></textarea>
-
   <button id="submitBtn">제출하기</button>
   <div id="status"></div>
 
   <script>
     // 💡 [중요] 새로 배포한 구글 Apps Script 웹앱 URL을 여기에 정확히 붙여넣으세요!
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyoACvlrGAosIQLqfbmdB2VMx4R5gyqy59HfUmHyAUR4eB6RznQL-uCjx_oiqJhlFY/exec";
+    const GAS_WEB_APP_URL = "YOUR_WEB_APP_URL_HERE";
 
     const STORES = [
       '강남대로', '청담', '두타', '분당', '고양', '센트럴', '송도', '서면', '종각', '타임',
       '용산', '동성로', '대전', '노원', '코엑스', '동탄', '홍대', '신림', '천안', '강남스퀘어',
-      '잠실', '부천', '부산센텀', 'T1', '목동', '여의도', '도곡', '김포', '대구신세계', '부산기장',
+      '잠실', '부천', '부산센텀', 'T1', '목동(3구)', '여의도', '도곡(3구)', '김포(3구)', '대구신세계(3구)', '부산기장',
       '성수', 'T2', '시흥', '파주', '수지', '의왕'
     ];
 
