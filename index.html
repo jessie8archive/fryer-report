@@ -70,7 +70,7 @@
   <div id="status"></div>
 
   <script>
-    // 💡 [중요] 새로 배포한 구글 Apps Script 웹앱 URL을 여기에 정확히 붙여넣으세요!
+    // 💡 [중요] 사용 중이신 구글 Apps Script 웹앱 URL을 정확히 채워넣으세요!
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynbNdqCNhGPkGYeCY_1QEtpsceUsLw2f9eZpBd1ej43fXIGyXSCjItbJLIteFpdOAA/exec";
 
     const STORES = [
@@ -123,21 +123,19 @@
       });
     });
 
-    // ⚡ [속도 최적화 튜닝]: 용량 압축률 조정 및 해상도 최적화(최대 1024px)
     function compressImageToBase64(file) {
       return new Promise(function (resolve, reject) {
         const img = new Image();
         const reader = new FileReader();
         reader.onload = function () {
           img.onload = function () {
-            const maxSize = 1024; // 모바일 확인용 최적 크기 타협
+            const maxSize = 1024; 
             let w = img.width, h = img.height;
             if (w > h && w > maxSize) { h = Math.round(h * (maxSize / w)); w = maxSize; }
             else if (h > maxSize) { w = Math.round(w * (maxSize / h)); h = maxSize; }
             const canvas = document.createElement('canvas');
             canvas.width = w; canvas.height = h;
             canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            // 압축 퀄리티를 0.6으로 설정하여 전송 용량 최소화
             resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
           };
           img.onerror = function () { reject(new Error("이미지 파일 변환 실패")); };
@@ -145,18 +143,6 @@
         };
         reader.onerror = function () { reject(new Error("파일 읽기 실패")); };
         reader.readAsDataURL(file);
-      });
-    }
-
-    // ⚡ [속도 추가 최적화]: 위치 정보 요청을 Promise로 감싸서, 사진 압축과 동시에 진행되게 함
-    function getLocationSafe(timeoutMs) {
-      return new Promise(function (resolve) {
-        if (!navigator.geolocation) { resolve({}); return; }
-        navigator.geolocation.getCurrentPosition(
-          function (pos) { resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
-          function () { resolve({}); }, // 권한 거부/실패해도 제출은 계속 진행
-          { timeout: timeoutMs }
-        );
       });
     }
 
@@ -178,11 +164,11 @@
       }
 
       btn.disabled = true;
-      statusEl.innerHTML = "⏳ 고속 사진 압축 및 위치 확인 동시 진행 중...";
+      statusEl.innerHTML = "⏳ 고속 사진 압축 진행 중...";
 
       try {
-        // 사진 압축과 위치 정보 요청을 동시에 진행 (순차 처리보다 1~2초 빨라짐)
-        const compressPromise = Promise.all(
+        // ⚡ [GPS 전면 제거]: 대기 시간 없이 곧바로 3장 압축 시작
+        const photos = await Promise.all(
           Array.from(inputs).map(async function (input) {
             const base64 = await compressImageToBase64(input.files[0]);
             return {
@@ -193,16 +179,13 @@
             };
           })
         );
-        const locationPromise = getLocationSafe(2000);
-
-        const [photos, loc] = await Promise.all([compressPromise, locationPromise]);
 
         const payload = {
           store: document.getElementById('store').value,
           fryerType: document.getElementById('fryerType').value,
           photos: photos,
-          lat: loc.lat,
-          lng: loc.lng,
+          lat: "", // 공백 처리
+          lng: ""  // 공백 처리
         };
 
         statusEl.innerHTML = "🚀 초고속 전송 중...";
