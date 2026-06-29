@@ -146,7 +146,7 @@
       });
     }
 
-    document.getElementById('submitBtn').addEventListener('click', async function () {
+document.getElementById('submitBtn').addEventListener('click', async function () {
       const btn = this;
       const statusEl = document.getElementById('status');
       const inputs = document.querySelectorAll('.photo-input');
@@ -171,7 +171,7 @@
           Array.from(inputs).map(async function (input) {
             const base64 = await compressImageToBase64(input.files[0]);
             return {
-              label: input.dataset.label,
+              label: input.dataset.label, // 💡 "프라이어 POT", "프라이어 상단", "프라이어 하단" 텍스트가 정확히 백엔드로 전달됩니다.
               name: input.files[0].name,
               mimeType: 'image/jpeg',
               base64: base64,
@@ -187,7 +187,7 @@
           lng: ""  
         };
 
-        statusEl.innerHTML = "🚀 사진 전송 중..."; // 담백하고 명확하게 수정
+        statusEl.innerHTML = "🚀 사진 전송 중...";
         await sendToServer(payload, btn, statusEl, inputs);
 
       } catch (err) {
