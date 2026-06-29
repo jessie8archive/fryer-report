@@ -71,7 +71,7 @@
 
   <script>
     // 💡 [중요] 새로 배포한 구글 Apps Script 웹앱 URL을 여기에 정확히 붙여넣으세요!
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzsgL6U9V5Lq4vFBBXM2me19luAvEPGN336Cha1npFeBhpYlu_QK9vk4NyCeYvYDnm-/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzqGeSmk2SPiI9S9wVTpEEVsBmbxN7SxF1IGgczHjfr4wAcVxMfLQrCv5lOkg6LfVjm/exec";
 
     const STORES = [
       '강남대로', '청담', '두타', '분당', '고양', '센트럴', '송도', '서면', '종각', '타임',
@@ -123,20 +123,22 @@
       });
     });
 
+    // ⚡ [속도 최적화 튜닝]: 용량 압축률 조정 및 해상도 최적화(최대 1024px)
     function compressImageToBase64(file) {
       return new Promise(function (resolve, reject) {
         const img = new Image();
         const reader = new FileReader();
         reader.onload = function () {
           img.onload = function () {
-            const maxSize = 1280;
+            const maxSize = 1024; // 모바일 확인용 최적 크기 타협
             let w = img.width, h = img.height;
             if (w > h && w > maxSize) { h = Math.round(h * (maxSize / w)); w = maxSize; }
             else if (h > maxSize) { w = Math.round(w * (maxSize / h)); h = maxSize; }
             const canvas = document.createElement('canvas');
             canvas.width = w; canvas.height = h;
             canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
+            // 압축 퀄리티를 0.6으로 설정하여 전송 용량 최소화
+            resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
           };
           img.onerror = function() { reject(new Error("이미지 파일 변환 실패")); };
           img.src = reader.result;
@@ -164,7 +166,7 @@
       }
 
       btn.disabled = true;
-      statusEl.innerHTML = "⏳ 사진 압축 및 보안 검증 중...";
+      statusEl.innerHTML = "⏳ 고속 사진 압축 및 보안 검증 중...";
 
       try {
         const photos = [];
@@ -184,7 +186,7 @@
           photos: photos,
         };
 
-        statusEl.innerHTML = "🚀 데이터 전송 중...";
+        statusEl.innerHTML = "🚀 초고속 전송 중...";
 
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
@@ -196,7 +198,7 @@
             async function () { 
               await sendToServer(payload, btn, statusEl, inputs); 
             },
-            { timeout: 3000 }
+            { timeout: 2500 } // 위치 수집 딜레이도 함께 단축
           );
         } else {
           await sendToServer(payload, btn, statusEl, inputs);
