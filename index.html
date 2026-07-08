@@ -23,200 +23,63 @@
 </head>
 <body>
 
-  <h2>SS 프라이어 청소 현황</h2>
+  <div id="main-content">
+    <h2>SS 프라이어 청소 현황</h2>
 
-  <div style="background: #fff; border-left: 4px solid #1a73e8; padding: 12px; margin-top: 10px; margin-bottom: 14px; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-    <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1a73e8; line-height: 1.5;">
-      💡 매주 프라이어 1대씩 청소 시에 사진 촬영하여 제출해 주세요!
-    </p>
+    <div style="background: #fff; border-left: 4px solid #1a73e8; padding: 12px; margin-top: 10px; margin-bottom: 14px; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1a73e8; line-height: 1.5;">
+        💡 매주 프라이어 1대씩 청소 시에 사진 촬영하여 제출해 주세요!
+      </p>
+    </div>
+
+    <div class="warning-box">
+      <strong>⚠️ 실시간 촬영 필수</strong><br>
+      카메라를 선택해 현장에서 즉석 촬영한 사진만 제출 가능합니다<br>
+      과거 저장된 앨범 이미지 선택 시 제출이 차단됩니다
+    </div>
+
+    <label>매장 선택</label>
+    <select id="store">
+      <option value="">매장을 선택하세요</option>
+    </select>
+
+    <label>프라이어 선택</label>
+    <select id="fryerType">
+      <option value="프라이 1">프라이 1</option>
+      <option value="프라이 2">프라이 2</option>
+      <option value="치킨">치킨</option>
+      <option value="슈룸">슈룸</option>
+    </select>
+
+    <div class="photo-item">
+      <label>프라이어 POT 사진 (촬영)</label>
+      <input type="file" accept="image/*" capture="environment" data-label="프라이어 POT" class="photo-input" id="p-input-1">
+      <img class="preview" id="p-preview-1">
+    </div>
+    <div class="photo-item">
+      <label>프라이어 상단 사진 (촬영)</label>
+      <input type="file" accept="image/*" capture="environment" data-label="프라이어 상단" class="photo-input" id="p-input-2">
+      <img class="preview" id="p-preview-2">
+    </div>
+    <div class="photo-item">
+      <label>프라이어 하단 사진 (촬영)</label>
+      <input type="file" accept="image/*" capture="environment" data-label="프라이어 하단" class="photo-input" id="p-input-3">
+      <img class="preview" id="p-preview-3">
+    </div>
+
+    <button id="submitBtn">제출하기</button>
+    <div id="status"></div>
   </div>
-
-  <div class="warning-box">
-    <strong>⚠️ 실시간 촬영 필수</strong><br>
-    카메라를 선택해 현장에서 즉석 촬영한 사진만 제출 가능합니다<br>
-    과거 저장된 앨범 이미지 선택 시 제출이 차단됩니다
-  </div>
-
-  <label>매장 선택</label>
-  <select id="store">
-    <option value="">매장을 선택하세요</option>
-  </select>
-
-  <label>프라이어 선택</label>
-  <select id="fryerType">
-    <option value="프라이 1">프라이 1</option>
-    <option value="프라이 2">프라이 2</option>
-    <option value="치킨">치킨</option>
-    <option value="슈룸">슈룸</option>
-  </select>
-
-  <div class="photo-item">
-    <label>프라이어 POT 사진 (촬영)</label>
-    <input type="file" accept="image/*" capture="environment" data-label="프라이어 POT" class="photo-input" id="p-input-1">
-    <img class="preview" id="p-preview-1">
-  </div>
-  <div class="photo-item">
-    <label>프라이어 상단 사진 (촬영)</label>
-    <input type="file" accept="image/*" capture="environment" data-label="프라이어 상단" class="photo-input" id="p-input-2">
-    <img class="preview" id="p-preview-2">
-  </div>
-  <div class="photo-item">
-    <label>프라이어 하단 사진 (촬영)</label>
-    <input type="file" accept="image/*" capture="environment" data-label="프라이어 하단" class="photo-input" id="p-input-3">
-    <img class="preview" id="p-preview-3">
-  </div>
-
-  <button id="submitBtn">제출하기</button>
-  <div id="status"></div>
 
   <script>
-    // 💡 [중요] 새로 배포한 구글 웹앱 URL 주소를 여기에 정확히 채워넣으세요!
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwFFwMyXZSA2aQj5Po7ronBZtT5scG9XuN8Rr6q5KrOzPXkIlPMmUfFVeqGg3d7cDJX/exec";
-
-    const STORES = [
-      '강남대로', '청담', '두타', '분당', '고양', '센트럴', '송도', '서면', '종각', '타임',
-      '용산', '동성로', '대전', '노원', '코엑스', '동탄', '홍대', '신림', '천안', '강남스퀘어',
-      '잠실', '부천', '부산센텀', 'T1', '목동(3구)', '여의도', '도곡(3구)', '김포(3구)', '대구신세계(3구)', '부산기장',
-      '성수', 'T2', '시흥', '파주', '수지', '의왕'
-    ];
-
-    const sel = document.getElementById('store');
-    STORES.forEach(function (s) {
-      const opt = document.createElement('option');
-      opt.value = s;
-      opt.textContent = s;
-      sel.appendChild(opt);
-    });
-
-    document.querySelectorAll('.photo-input').forEach(function (input, index) {
-      input.addEventListener('change', function () {
-        const img = document.getElementById('p-preview-' + (index + 1));
-        const statusEl = document.getElementById('status');
-
-        const existingAlert = input.parentNode.querySelector('.file-error-alert');
-        if (existingAlert) existingAlert.remove();
-        statusEl.innerHTML = '';
-
-        if (input.files[0]) {
-          const file = input.files[0];
-          const timeDiff = Math.abs(Date.now() - file.lastModified);
-          const minutesDiff = timeDiff / (1000 * 60);
-
-          if (minutesDiff > 5) {
-            input.value = "";
-            if (img) img.style.display = 'none';
-
-            const alertBox = document.createElement('div');
-            alertBox.className = 'file-error-alert';
-            alertBox.innerHTML = '⚠️ 과거 사진은 등록이 취소됩니다! [다시 촬영]해 주세요.';
-            input.parentNode.appendChild(alertBox);
-
-            statusEl.innerHTML = "<span class='error-text'>❌ 과거 사진이 감지되어 업로드가 차단되었습니다.</span>";
-            return;
-          }
-
-          if (img) {
-            img.src = URL.createObjectURL(file);
-            img.style.display = 'block';
-          }
-        }
-      });
-    });
-
-    function compressImageToBase64(file) {
-      return new Promise(function (resolve, reject) {
-        const img = new Image();
-        const reader = new FileReader();
-        reader.onload = function () {
-          img.onload = function () {
-            const maxSize = 1024; 
-            let w = img.width, h = img.height;
-            if (w > h && w > maxSize) { h = Math.round(h * (maxSize / w)); w = maxSize; }
-            else if (h > maxSize) { w = Math.round(w * (maxSize / h)); h = maxSize; }
-            const canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
-          };
-          img.onerror = function () { reject(new Error("이미지 파일 변환 실패")); };
-          img.src = reader.result;
-        };
-        reader.onerror = function () { reject(new Error("파일 읽기 실패")); };
-        reader.readAsDataURL(file);
-      });
-    }
-
-document.getElementById('submitBtn').addEventListener('click', async function () {
-      const btn = this;
-      const statusEl = document.getElementById('status');
-      const inputs = document.querySelectorAll('.photo-input');
-
-      if (!document.getElementById('store').value) {
-        statusEl.innerHTML = "<span class='error-text'>매장을 선택해 주세요!</span>";
-        return;
-      }
-
-      for (const input of inputs) {
-        if (!input.files[0]) {
-          statusEl.innerHTML = "<span class='error-text'>모든 사진을 촬영해 주세요. (" + input.dataset.label + " 누락)</span>";
-          return;
-        }
-      }
-
-      btn.disabled = true;
-      statusEl.innerHTML = "⏳ 사진 압축 진행 중...";
-
-      try {
-        const photos = await Promise.all(
-          Array.from(inputs).map(async function (input) {
-            const base64 = await compressImageToBase64(input.files[0]);
-            return {
-              label: input.dataset.label, // 💡 "프라이어 POT", "프라이어 상단", "프라이어 하단" 텍스트가 정확히 백엔드로 전달됩니다.
-              name: input.files[0].name,
-              mimeType: 'image/jpeg',
-              base64: base64,
-            };
-          })
-        );
-
-        const payload = {
-          store: document.getElementById('store').value,
-          fryerType: document.getElementById('fryerType').value,
-          photos: photos,
-          lat: "", 
-          lng: ""  
-        };
-
-        statusEl.innerHTML = "🚀 사진 전송 중...";
-        await sendToServer(payload, btn, statusEl, inputs);
-
-      } catch (err) {
-        statusEl.innerHTML = "<span class='error-text'>❌ 에러 발생: " + err.message + "</span>";
-        btn.disabled = false;
-      }
-    });
-
-    async function sendToServer(payload, btn, statusEl, inputs) {
-      try {
-        await fetch(GAS_WEB_APP_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(payload)
-        });
-
-        statusEl.innerHTML = "<span class='success-text'>🎉 제출 완료! 데이터가 성공적으로 기록되었습니다.</span>";
-        btn.disabled = false;
-
-        inputs.forEach(function (input) { input.value = ""; });
-        document.querySelectorAll('.preview').forEach(function (img) { img.style.display = 'none'; });
-        document.getElementById('store').value = "";
-
-      } catch (err) {
-        statusEl.innerHTML = "<span class='error-text'>❌ 전송 중 오류 발생: " + err.message + "</span>";
-        btn.disabled = false;
-      }
-    }
-  </script>
-</body>
-</html>
+    // 💡 [추가] 모바일 접속 원천 차단 기능 (화면 로드 시 PC 접속을 차단합니다)
+    window.addEventListener('DOMContentLoaded', function() {
+      const isMobile = /Mobi|Android|iPhone|iPad|Windows Phone/i.test(navigator.userAgent);
+      if (!isMobile) {
+        document.getElementById('main-content').innerHTML = `
+          <div style="text-align:center; margin-top:80px; padding:24px; background:#fff; border-radius:12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <h2 style="color:#d93025; margin-bottom:12px;">⚠️ 접속 제한 알림</h2>
+            <p style="font-size:15px; font-weight:bold; line-height:1.6; color:#333;">
+              본 시스템은 현장 실시간 검증을 위해<br><span style="color:#1a73e8;">모바일(스마트폰)</span>로만 제출이 가능합니다.
+            </p>
+            <p style="font-size:13px; color:#666; margin-top:10px;">
